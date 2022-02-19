@@ -4,6 +4,7 @@
 
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
+#include "Move.h"
 
 /*
    CONDITIONS UNDER WHICH THIS WORKED:
@@ -27,6 +28,13 @@ TinyGPSPlus gps;
 // The serial connection to the GPS device
 SoftwareSerial ss(RXPin, TXPin);
 
+const int  pwm1 = 10; // Power to right motor
+const int  pwm2 = 5; // Power to left motor
+const int  dir1 = 8; // Direction of right motor (low is forward)
+const int  dir2 = 7; // Direction of left motor (low is forward)
+
+Move move(pwm1, pwm2, dir1, dir2);
+
 int wayCount = 0;
 int wayLat[5];
 int wayLong[5];
@@ -34,22 +42,27 @@ int wayLong[5];
 void setup() {
   //Set up GPS
   Serial.begin(115200);
+ 
   ss.begin(GPSBaud);
+
+  move.power(100);
   
-  //Declaration for the pins used, both should be outputs.
-  pinMode(MotorDirection, OUTPUT);
-  pinMode(MotorSpeed, OUTPUT);
+  pinMode(pwm1,OUTPUT);   //left motors forward
+  pinMode(pwm2,OUTPUT);   //left motors reverse
+  pinMode(dir1,OUTPUT);   //right motors forward
+  pinMode(dir2,OUTPUT);   //right motors reverse
+
 
   // Test coordinates
-  wayLat[wayCount] = 39.04;
-  wayLong[wayCount] = -94.573;
+  wayLat[wayCount] = 39.04015;
+  wayLong[wayCount] = -94.57277;
   wayCount++;
 
   wayLat[wayCount] = 39.040151;
   wayLong[wayCount] = -94.572768;
   wayCount++;
 }
-
+/*
 void loop()
 {
   // This sketch displays information every time a new sentence is correctly encoded.
@@ -62,6 +75,13 @@ void loop()
     Serial.println(F("No GPS detected: check wiring."));
     while(true);
   }
+}
+*/
+void loop() {
+  move.forward();
+  delay(1);
+  move.left();
+  delay(1);
 }
 
 void displayInfo()
@@ -121,26 +141,3 @@ double getDistance2(double lat1, double lon1, double lat2, double lon2) {
 double getAngle(double lat1, double lon1, double lat2, double lon2) {
   
 }
-/*
-void accelerate(bool dir);
-
-void loop() {
-  
-  //Ramps up the speed in the clockwise direction.
-  accelerate(LOW);
-  analogWrite(MotorSpeed,0);
-  
-  //Ramps up the speed in the counter clockwise direction.  
-  accelerate(HIGH);
-  analogWrite(MotorSpeed,0);
-  
-}
-
-void accelerate(bool dir){
-  digitalWrite(MotorDirection, dir);                  //Loop increases the speed slowly until it reaches max speed.
-  for(int SpeedVal = 0; SpeedVal < 255; SpeedVal++){
-      analogWrite(MotorSpeed,SpeedVal);
-      delay(40);
-  }
-}
-*/

@@ -10,10 +10,9 @@ Move::Move(int pwm1, int pwm2, int dir1, int dir2)
 	this->dir2 = dir2; // Direction of left motor (low is forward)
 }
 
-Move* Move::power(int setPower)
+void Move::power(int setPower)
 {
 	powerValue = setPower;
-	return this;
 }
 
 int Move::getPower(){
@@ -47,8 +46,9 @@ void Move::left()
 {
 	analogWrite(pwm1, powerValue);
 	analogWrite(pwm2, powerValue);
-	digitalWrite(dir1, LOW);
-	digitalWrite(dir2, HIGH);
+    digitalWrite(dir2, HIGH);
+    digitalWrite(dir1, LOW);
+
 }
 void Move::right()
 {
