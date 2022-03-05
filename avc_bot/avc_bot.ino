@@ -1,6 +1,5 @@
 #define MotorDirection 8
 #define MotorSpeed 9
-#define M_PI 3.141592653589793238
 
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
@@ -19,69 +18,86 @@
 */
 static const int RXPin = 4, TXPin = 3;
 static const uint32_t GPSBaud = 9600;
-
-void displayInfo();
-double getDistance(double lat1, double lon1, double lat2, double lon2);
-
-// The TinyGPS++ object
-TinyGPSPlus gps;
-// The serial connection to the GPS device
-SoftwareSerial ss(RXPin, TXPin);
-
 const int  pwm1 = 10; // Power to right motor
 const int  pwm2 = 5; // Power to left motor
 const int  dir1 = 8; // Direction of right motor (low is forward)
 const int  dir2 = 7; // Direction of left motor (low is forward)
 
+void displayInfo();
 Move move(pwm1, pwm2, dir1, dir2);
+
+TinyGPSPlus gps;// The TinyGPS++ object
+SoftwareSerial ss(RXPin, TXPin); // The serial connection to the GPS device
 
 int wayCount = 0;
 int wayLat[5];
 int wayLong[5];
+double originLat, originLong;
+double targetLat = 0.000000;
+double targetLong = 0.000000;
+unsigned long lockTime;
 
 void setup() {
   //Set up GPS
-  Serial.begin(115200);
- 
+  Serial.begin(9600);
   ss.begin(GPSBaud);
 
-  move.power(100);
-  
-  pinMode(pwm1,OUTPUT);   //left motors forward
-  pinMode(pwm2,OUTPUT);   //left motors reverse
-  pinMode(dir1,OUTPUT);   //right motors forward
-  pinMode(dir2,OUTPUT);   //right motors reverse
+// Wait for GPS Lock
+  do{
+   while (ss.available() > 0){
+      if (gps.encode(ss.read()))
+        displayInfo();
+   }
+    if (millis() > 5000 && gps.charsProcessed() < 10)
+    {
+      Serial.println(F("No GPS detected: check wiring."));
+      while(true);
+    }
+  }while(gps.location.isValid() == false);
+    lockTime = millis();
+    Serial.println("-------------LOCK ACHIEVED-------------");
+    Serial.print("Approximate lock time: ");
+    Serial.print(lockTime/1000);
+    Serial.println();
 
-
-  // Test coordinates
-  wayLat[wayCount] = 39.04015;
-  wayLong[wayCount] = -94.57277;
-  wayCount++;
-
-  wayLat[wayCount] = 39.040151;
-  wayLong[wayCount] = -94.572768;
-  wayCount++;
+    originLat = gps.location.lat();
+    originLong = gps.location.lng();
 }
-/*
+
 void loop()
 {
-  // This sketch displays information every time a new sentence is correctly encoded.
-  while (ss.available() > 0)
+  while (ss.available() > 0){
     if (gps.encode(ss.read()))
-      displayInfo();
-
-  if (millis() > 5000 && gps.charsProcessed() < 10)
-  {
-    Serial.println(F("No GPS detected: check wiring."));
-    while(true);
+      displayInfo();      
   }
-}
-*/
-void loop() {
-  move.forward();
-  delay(1);
-  move.left();
-  delay(1);
+
+  // This does not work because of how the function was designed
+  // It seems to do the calculation relevant to actual GPS vs 
+  double courseToTarget =
+    TinyGPSPlus::courseTo(
+      gps.location.lat(),
+      gps.location.lng(),
+      targetLat, 
+      targetLong);
+
+  // This does not work because of how the function was designed
+  // It seems to do the calculation relevant to actual GPS vs 
+  unsigned long distanceToTarget =
+      (unsigned long)TinyGPSPlus::distanceBetween(
+      gps.location.lat(),
+      gps.location.lng(),
+      targetLat, 
+      targetLong) / 1000;
+  Serial.print("Distance to Target: "); 
+  Serial.print(distanceToTarget, 9);
+  Serial.print(", Course: ");
+  Serial.print(courseToTarget, 6);
+  Serial.print(", hdop: ");
+  Serial.print(gps.hdop.hdop());
+  Serial.print(", age: ");
+  Serial.print(gps.location.age());
+  Serial.println();
+  delay(50);
 }
 
 void displayInfo()
@@ -120,24 +136,4 @@ void displayInfo()
   }
 
   Serial.println();
-}
-
-// get distance between two lat/lon pairs in feet
-double getDistance(double lat1, double lon1, double lat2, double lon2) {
-  lat1 *= (M_PI / 180);
-  lat2 *= (M_PI / 180);
-  lon1 *= (M_PI / 180);
-  lon2 *= (M_PI / 180);
-
-  double distFeet = 20924640 * acos((sin(lat1) * sin(lat2)) + cos(lat1) * cos(lat2) * cos(lon2 - lon1));
-  return distFeet;
-}
-
-// get distance between two lat/lon pairs assuming recangular coordinate system
-double getDistance2(double lat1, double lon1, double lat2, double lon2) {
-  return sqrt(pow(lat2-lat1, 2)+pow(lon2-lon1, 2));
-}
-
-double getAngle(double lat1, double lon1, double lat2, double lon2) {
-  
 }
