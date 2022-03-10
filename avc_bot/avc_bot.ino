@@ -32,18 +32,20 @@ Move move(pwm1, pwm2, dir1, dir2);
 TinyGPSPlus gps;// The TinyGPS++ object
 SoftwareSerial ss(RXPin, TXPin); // The serial connection to the GPS device
 
-int wayCount = 4;
-int wayLat[5];
-int wayLong[5];
-double originLat, originLong;
-double targetLat = 0.000000;
-double targetLong = 0.000000;
+int wayCount = 5;
+double wayLat[5];
+double wayLong[5];
+volatile byte pointCount = 0;
 unsigned long lockTime;
+const int interruptPin = 2;
 
 void setup() {
   //Set up GPS
   Serial.begin(115200);
   ss.begin(GPSBaud);
+
+  pinMode(interruptPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointTest, CHANGE); 
 
 // Wait for GPS Lock
   do{
@@ -62,17 +64,29 @@ void setup() {
   Serial.print("Approximate lock time: ");
   Serial.print(lockTime/1000);
   Serial.println();
+  delay(200);
 
-  getWaypoints(wayCount);
+  //getWaypoints(wayCount);
 }
 
 void loop()
 {
   while (ss.available() > 0){
-    if (gps.encode(ss.read()))
-      displayInfo();      
-  }
-
+    if (gps.encode(ss.read())){
+      displayInfo();
+      for (int j = 0; j < pointCount; j++){
+        Serial.print("Lat: ");
+        Serial.print(wayLat[j], 6);
+        Serial.print(", Long: ");
+        Serial.print(wayLong[j], 6);
+        Serial.print(", PointCount: ");
+        Serial.print(pointCount);
+        Serial.println();
+      }
+    }
+}
+  
+/*
   // This does not work because of how the function was designed
   // It seems to do the calculation relevant to actual GPS vs 
   double courseToTarget =
@@ -101,9 +115,8 @@ void loop()
   Serial.print(", age: ");
   Serial.print(gps.location.age());
   Serial.println();
-  delay(50);
+*/
 }
-
 void displayInfo()
 {
   Serial.print(F("Location: ")); 
@@ -142,7 +155,18 @@ void displayInfo()
   Serial.println();
 }
 
-void getWaypoints(int wayCount) {
+// Interrupt Service Routine
+void wayPointTest(){
+  if (gps.location.isValid()){
+    if (gps.encode(ss.read())){
+      wayLat[pointCount] = gps.location.lat();
+      wayLong[pointCount] = gps.location.lng();
+      pointCount = pointCount + 1;
+    }
+  }
+}
+
+/*void getWaypoints(int wayCount) {
   double waypointLats[wayCount];
   double waypointLongs[wayCount];
 
@@ -162,19 +186,4 @@ void getWaypoints(int wayCount) {
     //Serial.println(waypointLats[i], 6);
     //Serial.println(waypointLongs[i], 6);
   }
-//  Serial.print("{");
-//  Serial.print(waypointLats[0], 10);
-//  for (int i = 1; i < wayCount; i++) {
-//    Serial.print(",");
-//    Serial.print(waypointLats[i], 10);
-//  }
-//  Serial.println("}");
-//
-//  Serial.print("{");
-//  Serial.print(waypointLongs[0], 10);
-//  for (int i = 1; i < wayCount; i++) {
-//    Serial.print(",");
-//    Serial.print(waypointLongs[i], 10);
-//  }
-//  Serial.println("}");
-}
+  */
