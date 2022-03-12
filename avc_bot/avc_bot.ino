@@ -32,22 +32,30 @@ Move move(pwm1, pwm2, dir1, dir2);
 TinyGPSPlus gps;// The TinyGPS++ object
 SoftwareSerial ss(RXPin, TXPin); // The serial connection to the GPS device
 
-int wayCount = 5;
-double wayLat[5];
-double wayLong[5];
+double wayLat[16];
+double wayLong[16];
 volatile byte pointCount = 0;
+volatile byte state = LOW;
+volatile byte prevState = LOW;
 unsigned long lockTime;
 const int interruptPin = 2;
+const int countLED[] = {10, 11, 12, 13};
 
 void setup() {
   //Set up GPS
   Serial.begin(115200);
   ss.begin(GPSBaud);
 
+  // Set interrupt pin
   pinMode(interruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointTest, CHANGE); 
+  attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
 
-// Wait for GPS Lock
+  // Set pins for LED output
+  for(int i = 0; i < 4; i++){
+    pinMode(countLED[i], OUTPUT);
+  }
+
+  // Activate GPS and wait for Lock
   do{
    while (ss.available() > 0){
       if (gps.encode(ss.read()))
@@ -65,8 +73,6 @@ void setup() {
   Serial.print(lockTime/1000);
   Serial.println();
   delay(200);
-
-  //getWaypoints(wayCount);
 }
 
 void loop()
@@ -84,11 +90,22 @@ void loop()
         Serial.println();
       }
     }
+    displayWayCount(pointCount);
+  }
 }
-  
+
+void displayWayCount(byte num){
+  for(int i = 0; i < 4; i++){
+    if(bitRead(num, i) == 1){
+      digitalWrite(countLED[i], HIGH);
+    }
+    else{
+      digitalWrite(countLED[i], LOW);
+    }
+  }
+}
 /*
-  // This does not work because of how the function was designed
-  // It seems to do the calculation relevant to actual GPS vs 
+  // (Current lat, current long, target lat, target long)
   double courseToTarget =
     TinyGPSPlus::courseTo(
       gps.location.lat(),
@@ -98,8 +115,7 @@ void loop()
 
   if (courseToTarget > 180) courseToTarget = -1 * (courseToTarget - 180); 
 
-  // This does not work because of how the function was designed
-  // It seems to do the calculation relevant to actual GPS vs 
+  // (current lat, current long, target lat, target long)
   unsigned long distanceToTarget =
       (unsigned long)TinyGPSPlus::distanceBetween(
       gps.location.lat(),
@@ -116,7 +132,7 @@ void loop()
   Serial.print(gps.location.age());
   Serial.println();
 */
-}
+
 void displayInfo()
 {
   Serial.print(F("Location: ")); 
@@ -156,12 +172,14 @@ void displayInfo()
 }
 
 // Interrupt Service Routine
-void wayPointTest(){
-  if (gps.location.isValid()){
-    if (gps.encode(ss.read())){
-      wayLat[pointCount] = gps.location.lat();
-      wayLong[pointCount] = gps.location.lng();
-      pointCount = pointCount + 1;
+void wayPointInterrupt(){
+  if(pointCount < 15){
+    if (gps.location.isValid()){
+      if (gps.encode(ss.read())){
+        wayLat[pointCount] = gps.location.lat();
+        wayLong[pointCount] = gps.location.lng();
+        pointCount = pointCount + 1;
+      }
     }
   }
 }
