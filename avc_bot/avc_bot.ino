@@ -46,15 +46,14 @@ void setup() {
   Serial.begin(115200);
   ss.begin(GPSBaud);
   move.power(40);
-
   // Set interrupt pin
-  //pinMode(interruptPin, INPUT);
-  //attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
+  // pinMode(interruptPin, INPUT);
+  // attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
 
   // Set pins for LED output
-  for(int i = 0; i < 4; i++){
+  /*for(int i = 0; i < 4; i++){
     pinMode(countLED[i], OUTPUT);
-  }
+  }*/
 
   // Activate GPS and wait for Lock
   do{
@@ -80,11 +79,23 @@ void loop()
 {
   while (ss.available() > 0){
     if (gps.encode(ss.read())){
+      
       displayInfo();
-      move.forward();
+   /*   for (int j = 0; j < pointCount; j++){
+        Serial.print("Lat: ");
+        Serial.print(wayLat[j], 6);
+        Serial.print(", Long: ");
+        Serial.print(wayLong[j], 6);
+        Serial.print(", PointCount: ");
+        Serial.print(pointCount);
+        Serial.println();
+      }*/
+     move.forward();
       delay(20000);
     }
-    /*displayWayCount(pointCount);*/
+   
+    /* displayWayCount(pointCount);
+     */
   }
 }
 
