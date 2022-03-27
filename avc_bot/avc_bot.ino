@@ -19,10 +19,10 @@
 */
 static const int RXPin = 4, TXPin = 3;
 static const uint32_t GPSBaud = 9600;
-const int  pwm1 = 10; // Power to right motor
-const int  pwm2 = 5; // Power to left motor
-const int  dir1 = 8; // Direction of right motor (low is forward)
-const int  dir2 = 7; // Direction of left motor (low is forward)
+const int  pwm1 = 11; // Power to right motor
+const int  pwm2 = 9; // Power to left motor
+const int  dir1 = 12; // Direction of right motor (low is forward)
+const int  dir2 = 10; // Direction of left motor (low is forward)
 
 void displayInfo();
 void getWaypoints(int);
@@ -45,15 +45,15 @@ void setup() {
   //Set up GPS
   Serial.begin(115200);
   ss.begin(GPSBaud);
-
+  move.power(40);
   // Set interrupt pin
-  pinMode(interruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
+  // pinMode(interruptPin, INPUT);
+  // attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
 
   // Set pins for LED output
-  for(int i = 0; i < 4; i++){
+  /*for(int i = 0; i < 4; i++){
     pinMode(countLED[i], OUTPUT);
-  }
+  }*/
 
   // Activate GPS and wait for Lock
   do{
@@ -79,8 +79,9 @@ void loop()
 {
   while (ss.available() > 0){
     if (gps.encode(ss.read())){
+      
       displayInfo();
-      for (int j = 0; j < pointCount; j++){
+   /*   for (int j = 0; j < pointCount; j++){
         Serial.print("Lat: ");
         Serial.print(wayLat[j], 6);
         Serial.print(", Long: ");
@@ -88,9 +89,13 @@ void loop()
         Serial.print(", PointCount: ");
         Serial.print(pointCount);
         Serial.println();
-      }
+      }*/
+     move.forward();
+      delay(20000);
     }
-    displayWayCount(pointCount);
+   
+    /* displayWayCount(pointCount);
+     */
   }
 }
 
