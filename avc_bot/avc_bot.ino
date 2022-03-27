@@ -5,6 +5,7 @@
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include "Move.h"
+#include <LiquidCrystal.h>
 
 /*
    CONDITIONS UNDER WHICH THIS WORKED:
@@ -24,6 +25,10 @@ const int  pwm2 = 9; // Power to left motor
 const int  dir1 = 12; // Direction of right motor (low is forward)
 const int  dir2 = 10; // Direction of left motor (low is forward)
 
+const int rs = A5, en = A4, d4 = A3, d5 = A2, d6 = A1, d7 = A0;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+
 void displayInfo();
 void getWaypoints(int);
 
@@ -39,21 +44,25 @@ volatile byte state = LOW;
 volatile byte prevState = LOW;
 unsigned long lockTime;
 const int interruptPin = 2;
-const int countLED[] = {10, 11, 12, 13};
 
 void setup() {
   //Set up GPS
   Serial.begin(115200);
   ss.begin(GPSBaud);
+
+
+  //Display
+  lcd.begin(16, 2);
+  lcd.print("Locking on...");
+
+  // Motor Power (0-255)
   move.power(40);
+  
+
   // Set interrupt pin
   // pinMode(interruptPin, INPUT);
   // attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
 
-  // Set pins for LED output
-  /*for(int i = 0; i < 4; i++){
-    pinMode(countLED[i], OUTPUT);
-  }*/
 
   // Activate GPS and wait for Lock
   do{
@@ -81,34 +90,23 @@ void loop()
     if (gps.encode(ss.read())){
       
       displayInfo();
-   /*   for (int j = 0; j < pointCount; j++){
-        Serial.print("Lat: ");
-        Serial.print(wayLat[j], 6);
-        Serial.print(", Long: ");
-        Serial.print(wayLong[j], 6);
-        Serial.print(", PointCount: ");
-        Serial.print(pointCount);
-        Serial.println();
-      }*/
-     move.forward();
-      delay(20000);
+      displayLCD();
+      move.forward();
+      delay(1000);
     }
-   
-    /* displayWayCount(pointCount);
-     */
+
   }
 }
 
-void displayWayCount(byte num){
-  for(int i = 0; i < 4; i++){
-    if(bitRead(num, i) == 1){
-      digitalWrite(countLED[i], HIGH);
-    }
-    else{
-      digitalWrite(countLED[i], LOW);
-    }
-  }
+void displayLCD(){
+  lcd.clear();
+  lcd.print(gps.location.lat(), 6);
+  lcd.setCursor(0,1);
+  lcd.print(gps.location.lng(), 6);
+  lcd.setCursor(10, 0);
+  lcd.print("(^-^)/");
 }
+
 /*
   // (Current lat, current long, target lat, target long)
   double courseToTarget =
