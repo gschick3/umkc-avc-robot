@@ -24,8 +24,10 @@ const int  pwm1 = 11; // Power to right motor
 const int  pwm2 = 9; // Power to left motor
 const int  dir1 = 12; // Direction of right motor (low is forward)
 const int  dir2 = 10; // Direction of left motor (low is forward)
+
 const int rs = A5, en = A4, d4 = A3, d5 = A2, d6 = A1, d7 = A0;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 
 void displayInfo();
 void getWaypoints(int);
@@ -48,6 +50,7 @@ void setup() {
   Serial.begin(115200);
   ss.begin(GPSBaud);
 
+
   //Display
   lcd.begin(16, 2);
   lcd.print("Locking on...");
@@ -59,6 +62,7 @@ void setup() {
   // Set interrupt pin
   // pinMode(interruptPin, INPUT);
   // attachInterrupt(digitalPinToInterrupt(interruptPin), wayPointInterrupt, CHANGE); 
+
 
   // Activate GPS and wait for Lock
   do{
@@ -84,11 +88,13 @@ void loop()
 {
   while (ss.available() > 0){
     if (gps.encode(ss.read())){
+      
       displayInfo();
       displayLCD();
       move.forward();
       delay(1000);
     }
+
   }
 }
 
