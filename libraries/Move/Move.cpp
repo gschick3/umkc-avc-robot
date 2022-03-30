@@ -68,8 +68,8 @@ void Move::halt()
 
 void Move::turn(int degree){
 	int orginalPower = getPower();
-	int timeDelay = 100; // how much it takes to turn 15 degrees
-	power(255); 
+	int timeDelay = 95; // how much it takes to turn 15 degrees
+	power(150);
 
 	if (degree < 0){
 		left();
