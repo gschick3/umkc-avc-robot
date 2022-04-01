@@ -34,30 +34,31 @@ void Move::forward()
 	digitalWrite(dir1, LOW);   
 	digitalWrite(dir2, LOW);
 }
+
 void Move::backward()
 {
 	analogWrite(pwm1, powerValue);
 	analogWrite(pwm2, powerValue);
 	digitalWrite(dir1, HIGH);
 	digitalWrite(dir2, HIGH);
-
 }
+
 void Move::left()
 {
 	analogWrite(pwm1, powerValue);
 	analogWrite(pwm2, powerValue);
-    digitalWrite(dir2, HIGH);
     digitalWrite(dir1, LOW);
-
+	digitalWrite(dir2, HIGH);
 }
+
 void Move::right()
 {
 	analogWrite(pwm1, powerValue);
 	analogWrite(pwm2, powerValue);
 	digitalWrite(dir1, HIGH);
 	digitalWrite(dir2, LOW);
-
 }
+
 void Move::halt()
 {
 	analogWrite(pwm1, 0);
@@ -66,9 +67,10 @@ void Move::halt()
 	digitalWrite(dir2, LOW);
 }
 
+/* MOVED TO AVC_BOT CODE
 void Move::turn(int degree){
 	int orginalPower = getPower();
-	int timeDelay = 95; // how much it takes to turn 15 degrees
+	int timeDelay = 200; // how much it takes to turn 15 degrees
 	power(150);
 
 	if (degree < 0){
@@ -83,5 +85,5 @@ void Move::turn(int degree){
 
 	power(orginalPower); // sets power to before it started to turn.
 }
-
+*/
 	
