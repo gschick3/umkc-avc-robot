@@ -35,9 +35,9 @@ SoftwareSerial ss(RXPin, TXPin); // The serial connection to the GPS device
 
 double originLat, originLong;
 
-double wayLat[16] = {39.040149}; // hard coded
-double wayLong[16] = {-94.572029}; // hard coded
-int numWays = 0; // total number of waypoints minus 1
+double wayLat[16] = {39.040126,39.040191,39.040172,39.040096}; // hard coded
+double wayLong[16] = {-94.572052,-94.572074,-94.572013,-94.572029}; // hard coded
+int numWays = 4; // total number of waypoints minus 1
 int wayCount; // which waypoint you're on
 
 unsigned long lockTime;
@@ -45,6 +45,7 @@ unsigned long lockTime;
 int delayTime = 200; // general delay time in milliseconds
 
 int degree; // degrees away from next waypoint
+int testCount;
 
 void setup() {
   wayCount = 0;
@@ -56,22 +57,23 @@ void setup() {
   ss.begin(GPSBaud);
 
   // Motor Power (0-255)
-  move.power(255);
-
-  // test movement
+  move.power(100);
+  
+  // test movement (definitely not the course hard-coded into the setup)
   move.forward();
-  delay(1000);
-//  move.turn(90);
-  move.backward();
-  delay(1000);
-//  move.turn(180);
-  move.halt();
-  delay(2000);
+  delayFt(20);
+  move.turn(-90);
+  move.forward();
+  delayFt(20);
   move.turn(90);
+  move.forward();
+  delayFt(20);
+  move.turn(90);
+  move.forward();
+  delayFt(20);
   move.turn(-90);
   move.halt();
   delay(5000);
-
   
   // Activate GPS and wait for Lock
   do {
@@ -96,7 +98,8 @@ void setup() {
   Serial.print("Approximate lock time: ");
   Serial.print(lockTime/1000);
   Serial.println();
-  smartDelay(delayTime);
+  smartDelay(delayTime * 5);
+  testCount = 0;
 }
 
 void loop()
@@ -105,18 +108,28 @@ void loop()
   {
     if (gps.encode(ss.read()))
     {
-      if(checkErrors(5, 200)) {
+      if(checkErrors(5, 400)) {
         move.halt();
+        smartDelay(5000);
         continue;
       }
       
       displayInfo();
       displayLCD(degree);
-      
+      degree = 0;
+
+      /*
       if (originLat == gps.location.lat() && originLong == gps.location.lng()) {
         move.forward();
-        smartDelay(delayTime * 20);
+        smartDelay(delayTime * 40);
         continue;
+      }
+      */
+      if (testCount == 0){
+        move.forward();
+        smartDelay(delayTime * 10);
+        testCount = 1;
+        //continue;
       }
       
       unsigned long distanceToWaypoint = getDistanceFromTarget(wayLat[wayCount], wayLong[wayCount]);
@@ -137,15 +150,19 @@ void loop()
       degree = turnTowardsWaypoint(wayLat[wayCount], wayLong[wayCount]);
       
       if (distanceToWaypoint < 3 && wayCount != numWays) {
-        move.power(130);
+        move.power(150);
       }
       else {
-        move.power(255); 
+        //move.power(255); 
       }
       move.forward();
       smartDelay(delayTime * 5);
     }
   }
+}
+
+void delayFt(int ft) {
+  delay(ft / 3.3333333333 * 1000);
 }
 
 /************************************************************************************
@@ -163,7 +180,7 @@ bool checkErrors(int hdop, int age) {
 void printError(int hdop, int age) {
   lcd.clear();
   lcd.print("ERROR");
-  lcd.setCursor(1, 0);
+  lcd.setCursor(0, 1);
   if (!gps.location.isValid()) {
     lcd.print("Location invalid.");
     return;
@@ -194,6 +211,12 @@ int turnTowardsWaypoint(double targetLat, double targetLong){
       targetLat, 
       targetLong);
 
+  if(checkErrors(5, 400)) {
+    move.halt();
+    smartDelay(5000);
+    return 0;
+  }
+
   int dir = abs(courseToTarget - gps.course.deg());
 
   if (dir > 180) dir -= 360; 
@@ -214,6 +237,8 @@ int turnTowardsWaypoint(double targetLat, double targetLong){
     //move.halt();
     //smartDelay(delayTime);
     move.turn(dir);
+    move.halt();
+    smartDelay(2000);
   }
   return dir;
 }
@@ -310,14 +335,16 @@ void smartDelay(unsigned long ms)
  ***********************************************************************************/
 void Move::turn(int degree){
   int orginalPower = getPower();
-  int timeDelay = 375; // how much it takes to turn 15 degrees
-  power(150);
+  int timeDelay; // how much it takes to turn 15 degrees
+  power(200);
 
   if (degree < 0){
+    timeDelay = 120;
     left();
     degree *= -1;
   }
   else{ 
+    timeDelay = 190;
     right();
   }
   
